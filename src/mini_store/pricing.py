@@ -1,6 +1,5 @@
 """Pricing rules for orders."""
 
-
 def calculate_order_total(
     subtotal: float,
     customer_type: str,
