@@ -37,3 +37,28 @@ def test_sms_shipping_update_is_sent():
         "+521234567890",
         "Order A-100 shipped. Tracking: TRACK-9.",
     )
+
+
+def test_email_order_confirmation():
+    email = Mock()
+    service = NotificationService(email, Mock(), Mock())
+
+    service.send_order_confirmation(make_customer("email"), "B-200")
+
+    email.send.assert_called_once()
+
+def test_sms_shipping_update():
+    sms = Mock()
+    service = NotificationService(Mock(), sms, Mock())
+
+    service.send_shipping_update(make_customer("sms"), "B-200", "TRACK-25")
+
+    sms.send.assert_called_once()
+
+def test_email_is_not_sent_for_sms_customer():
+    email = Mock()
+    service = NotificationService(email, Mock(), Mock())
+
+    service.send_shipping_update(make_customer("sms"), "A-100", "TRACK-9")
+
+    email.send.assert_not_called()
