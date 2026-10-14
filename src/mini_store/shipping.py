@@ -1,8 +1,34 @@
 """Shipping quotation rules."""
 
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Package:
+    weight_kg: float
+    length_cm: float
+    width_cm: float
+    height_cm: float
+
+    @property
+    def volumetric_weight(self) -> float:
+        return (self.length_cm * self.width_cm * self.height_cm) / 5000
+
+    @property
+    def chargeable_weight(self) -> float:
+        return max(self.weight_kg, self.volumetric_weight)
+
+    @property
+    def is_oversized(self) -> bool:
+        return (
+            self.length_cm > 100
+            or self.width_cm > 100
+            or self.height_cm > 100
+        )
+
 
 def volumetric_weight(length_cm: float, width_cm: float, height_cm: float) -> float:
-    return (length_cm * width_cm * height_cm) / 5000
+    return Package(0.0, length_cm, width_cm, height_cm).volumetric_weight
 
 
 def chargeable_weight(
@@ -11,8 +37,7 @@ def chargeable_weight(
     width_cm: float,
     height_cm: float,
 ) -> float:
-    volume_weight = volumetric_weight(length_cm, width_cm, height_cm)
-    return max(weight_kg, volume_weight)
+    return Package(weight_kg, length_cm, width_cm, height_cm).chargeable_weight
 
 
 def shipping_quote(
@@ -23,24 +48,20 @@ def shipping_quote(
     destination_country: str,
     expedited: bool,
 ) -> float:
-    billable = chargeable_weight(weight_kg, length_cm, width_cm, height_cm)
+    pkg = Package(weight_kg, length_cm, width_cm, height_cm)
+    
+    rates = {
+        "MX": (89.0, 18.0),
+        "US": (199.0, 42.0),
+    }
+    base, per_kg = rates.get(destination_country, (299.0, 65.0))
 
-    if destination_country == "MX":
-        base = 89.0
-        per_kg = 18.0
-    elif destination_country == "US":
-        base = 199.0
-        per_kg = 42.0
-    else:
-        base = 299.0
-        per_kg = 65.0
-
-    total = base + billable * per_kg
+    total = base + pkg.chargeable_weight * per_kg
 
     if expedited:
         total *= 1.35
 
-    if length_cm > 100 or width_cm > 100 or height_cm > 100:
+    if pkg.is_oversized:
         total += 120.0
 
     return round(total, 2)
