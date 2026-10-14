@@ -17,3 +17,15 @@ def test_too_many_items_are_rejected():
         False,
         "too many items",
     )
+def test_zero_subtotal_is_rejected():
+    assert validate_checkout(3, 0, "MX", "44100", "card") == (
+        False,
+        "subtotal must be positive",
+    )
+
+
+def test_negative_subtotal_is_rejected():
+    assert validate_checkout(3, -100, "MX", "44100", "card") == (
+        False,
+        "subtotal must be positive",
+    )
