@@ -1,5 +1,26 @@
 """Pricing rules for orders."""
 
+_CUSTOMER_DISCOUNT_RATES = {"premium": 0.10, "employee": 0.15}
+_TAX_RATES = {"MX": 0.16}
+
+
+def _customer_discount(subtotal: float, customer_type: str) -> float:
+    return subtotal * _CUSTOMER_DISCOUNT_RATES.get(customer_type, 0.0)
+
+
+def _coupon_discount(subtotal: float, coupon_code: str | None) -> float:
+    """Coupons are evaluated against the pre-discount subtotal."""
+    if coupon_code == "SAVE5":
+        return subtotal * 0.05
+    if coupon_code == "SAVE20" and subtotal >= 1500:
+        return subtotal * 0.20
+    return 0.0
+
+
+def _calculate_tax(country: str, discounted_subtotal: float) -> float:
+    return discounted_subtotal * _TAX_RATES.get(country, 0.0)
+
+
 def _calculate_shipping(country: str, discounted_subtotal: float) -> float:
     """Return shipping fee based on destination and subtotal threshold."""
     if country == "MX":
@@ -14,20 +35,10 @@ def calculate_order_total(
     country: str,
 ) -> float:
     """Return the final order total after discounts, tax, and shipping."""
-    discount = 0.0
-
-    if customer_type == "premium":
-        discount = subtotal * 0.10
-    elif customer_type == "employee":
-        discount = subtotal * 0.15
-
-    if coupon_code == "SAVE5":
-        discount += subtotal * 0.05
-    elif coupon_code == "SAVE20" and subtotal >= 1500:
-        discount += subtotal * 0.20
-
+    discount = _customer_discount(subtotal, customer_type) + _coupon_discount(
+        subtotal, coupon_code
+    )
     discounted_subtotal = max(0.0, subtotal - discount)
-    tax = discounted_subtotal * 0.16 if country == "MX" else 0.0
+    tax = _calculate_tax(country, discounted_subtotal)
     shipping = _calculate_shipping(country, discounted_subtotal)
-
     return round(discounted_subtotal + tax + shipping, 2)
