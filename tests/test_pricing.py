@@ -21,5 +21,7 @@ def test_employee_customer_receives_discount():
         1000, "employee", None, "MX"
     ) == 1085.0
 
+def test_save20_coupon_applies_at_minimum_subtotal():
+    assert calculate_order_total(1500, "standard", "SAVE20", "MX") == 1392.0
 
 
