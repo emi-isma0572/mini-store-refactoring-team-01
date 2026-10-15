@@ -2,6 +2,14 @@
 
 from dataclasses import dataclass
 
+# AI FIX: Extraer configuración para separar los datos de la lógica matemática.
+SHIPPING_RATES = {
+    "MX": {"base": 89.0, "per_kg": 18.0},
+    "US": {"base": 199.0, "per_kg": 42.0},
+    "DEFAULT": {"base": 299.0, "per_kg": 65.0}
+}
+EXPEDITED_MULTIPLIER = 1.35
+OVERSIZE_SURCHARGE = 120.0
 
 @dataclass(frozen=True)
 class Package:
@@ -26,10 +34,8 @@ class Package:
             or self.height_cm > 100
         )
 
-
 def volumetric_weight(length_cm: float, width_cm: float, height_cm: float) -> float:
     return Package(0.0, length_cm, width_cm, height_cm).volumetric_weight
-
 
 def chargeable_weight(
     weight_kg: float,
@@ -38,7 +44,6 @@ def chargeable_weight(
     height_cm: float,
 ) -> float:
     return Package(weight_kg, length_cm, width_cm, height_cm).chargeable_weight
-
 
 def shipping_quote(
     weight_kg: float,
@@ -50,18 +55,15 @@ def shipping_quote(
 ) -> float:
     pkg = Package(weight_kg, length_cm, width_cm, height_cm)
     
-    rates = {
-        "MX": (89.0, 18.0),
-        "US": (199.0, 42.0),
-    }
-    base, per_kg = rates.get(destination_country, (299.0, 65.0))
-
-    total = base + pkg.chargeable_weight * per_kg
+    # AI FIX: Lógica mucho más limpia sin estructuras if/elif complejas
+    rates = SHIPPING_RATES.get(destination_country, SHIPPING_RATES["DEFAULT"])
+    
+    total = rates["base"] + (pkg.chargeable_weight * rates["per_kg"])
 
     if expedited:
-        total *= 1.35
+        total *= EXPEDITED_MULTIPLIER
 
     if pkg.is_oversized:
-        total += 120.0
+        total += OVERSIZE_SURCHARGE
 
     return round(total, 2)
